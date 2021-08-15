@@ -30,7 +30,7 @@ mount di path : /mnt/external/secrets/tls/cas/*.crt
 
 `docker exec -it signserver bash`
 
-truststore dan keystore akan digenerate ada di path `/opt/primekey/wildfly-22.0.1.Final/standalone/`
+truststore dan keystore akan digenerate ada di path `/opt/primekey/wildfly-22.0.1.Final/standalone/configuration`
 
 check menggunakan 
 
@@ -39,3 +39,13 @@ check menggunakan
 misal   
 `keytool -list -v -keystore keystore.jks`   
 `keytool -list -v -keystore truststore.jks`   
+
+### akses web
+
+http://ss.gehirn.org:8080/signserver/
+
+
+## referensi
+
+- https://stackoverflow.com/questions/19486200/is-there-a-way-to-test-2-way-ssl-through-browser/19507156
+- 
