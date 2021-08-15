@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  signserver-service:
+    container_name: signserver
+    image: primekey/signserver-ce:5.2.0
+    ports:
+      - 8443:8443
+      - 443:8443
+      - 8080:8080
+    hostname: ss.gehirn.org
+    volumes:
+      - ../dckr_vols:/mnt/uyo
+      - ../certa/keystore.jks:/mnt/persistent/secrets/tls/ss.gehirn.org/server.jks
+      - ../certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.gehirn.org/server.storepasswd
