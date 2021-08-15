@@ -11,5 +11,6 @@ services:
     hostname: ss.gehirn.org
     volumes:
       - ../dckr_vols:/mnt/uyo
-      - ../certa/keystore.jks:/mnt/persistent/secrets/tls/ss.gehirn.org/server.jks
-      - ../certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.gehirn.org/server.storepasswd
+      - ../certa/keystore.jks:/mnt/persistent/secrets/tls/ss.gehirn.org/server.jks:ro
+      - ../certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.gehirn.org/server.storepasswd:ro
+      - ../certa_chrome/chrome.cer:/mnt/external/secrets/tls/cas/ManagementCA1.crt:ro
