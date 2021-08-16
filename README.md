@@ -81,8 +81,42 @@ pada tag:
 
 http://ss.gehirn.org:8080/signserver/
 
+## Signer
+
+langkah-langkahnya diambil dari halaman [readme docker signserver](https://hub.docker.com/r/primekey/signserver-ce) 
+
+### tes pdf signer 
+
+di tes ini kita ingin menambahkan pdf signer. Worker yg perlu ditambahkan ada dua: *Crypto token* dan *pdfsigner*
+
+#### alternative 1, using tmeplate
+
+##### Add Crypto Token
+
+ - Go to the SignServer Administration Web.
+ - On the Workers page, click Add.
+ - Click From Template.
+ - Select keystore-crypto.properties in the Load From Template list and click Next.
+ - Update the following in the configuration:
+    - Remove the "#" before "WORKERGENID1.KEYSTOREPASSWORD=foo123".
+ - Click Apply to add the Crypto Token.
+
+##### Add Signers
+
+ - On the Workers page, click Add.
+ - Click From Template.
+ - Select the properties in the Load From Template list for the signer to add, for example, pdfsigner.properties, and click Next.
+ - Click Apply to load the configuration and verify that the signer is in state ACTIVE and ready to be used.
+
+##### Test Signing
+
+ - Go to the SignServer Client Web: https://ss.gehirn.org/signserver/clientweb/
+ - Under File Upload, specify the Worker Name used, for example, *PDFSigner*.
+ - Click Browse to select a PDF file.
+ - Click Submit and store the resulting signature file.
 
 ## referensi
 
 - https://stackoverflow.com/questions/19486200/is-there-a-way-to-test-2-way-ssl-through-browser/19507156
-- 
+- https://hub.docker.com/r/primekey/signserver-ce
+- https://github.com/primekeydevs/containers
