@@ -24,7 +24,8 @@ using primekey signserver
  - **Add the certificate to the trust store file (opt.)**  
    menyimpan certificate ke trusstore file , saat import ke browser bisa dipilih menggunakan *server.cer* seperti point di atas atau melalui truststore yang terbentuk (dalam hal ini cacerts.jks)   
    `keytool -import -v -trustcacerts -alias ss.gehirn.org -file server.cer  -keypass passw0rd_cacert -storepass passw0rd_cacert -keystore cacerts_4_java_apps.jks`   
-   opsi ini diperlukan untuk apps yg perlu akses sign server certificate melalui mekanisme trust store, pada aplikasi Java menggunakan opsi JVM `-Djavax.net.ssl.trustStore` dan `-Djavax.net.ssl.trustStorePassword`
+   opsi pada point ini diperlukan untuk apps yg perlu akses sign server certificate melalui mekanisme trust store.   
+   Pada aplikasi Java bisa menggunakan opsi JVM `-Djavax.net.ssl.trustStore` dan `-Djavax.net.ssl.trustStorePassword`
  - **import certificate ke browser (chrome)**   
    add atau import certificate ini ke browser sehingga browser mengenali signserver. Import disarankan menggunakan *server.cer* karena lebih mudah, sementara jika menggunakan trustore akan diminta password yang diset saat membuat truststore file tersebut. Import atau simpan pada bagian certificate store: *Trusted Root CA*
  - **import certificate ke browser (Firefox)**
@@ -33,7 +34,7 @@ using primekey signserver
 Setelah langkah ini bisa jalankan script signserver (tanpa client truststore) dengan memasang atau mounting 'keystore.jks' ke keystore signserver (via mount ke path */mnt/persistent/secrets/tls/ss.gehirn.org/server.jks* jika menggunakan docker).   
 Untuk setting client trustore lakukan langkah berikutnya.
 
-**Catatan tambahan**, CN untuk signserver certificate pakai link webadmin sesuai rekomendasi link [ini](https://stackoverflow.com/questions/19486200/is-there-a-way-to-test-2-way-ssl-through-browser/19507156)
+**Catatan tambahan**, CN untuk signserver certificate pakai hostname signserver sesuai rekomendasi link [ini](https://stackoverflow.com/questions/19486200/is-there-a-way-to-test-2-way-ssl-through-browser/19507156)
 
 
 ## setting up pki untuk client/browser
@@ -50,7 +51,7 @@ akan digunakan openssl sebagai alternatif
    Install certificate.p12 ke browser chrome pada bagian 'Personal'
 
  
-pada projek ini, certificate (public key) yang digunakan oleh browser (dan oleh karena itu ada atau terpasang pada truststore signserver) berada di posisi `../certa_pem/certificate.pem:/mnt/external/secrets/tls/cas/ManagementCA2.crt:ro` di dalam file docker-compose
+pada projek ini, certificate (public key) yang digunakan oleh browser (dan oleh karena itu ada atau terpasang pada truststore signserver) berada di posisi `../certa_pem/certificate.pem:/mnt/external/secrets/tls/cas/ManagementCA1.crt:ro` di dalam file docker-compose
 
 catatan:   
 untuk membedakan dengan certificate lain, berikut contoh full DN untuk certtificate browser:   
@@ -58,7 +59,7 @@ untuk membedakan dengan certificate lain, berikut contoh full DN untuk certtific
 
 ## setting cert client:
 
-mount di path : /mnt/external/secrets/tls/cas/*.crt
+mount di path : `/mnt/external/secrets/tls/cas/*.crt`
 
 ## enter container
 
@@ -107,7 +108,7 @@ langkah-langkahnya diambil dari halaman [readme docker signserver](https://hub.d
 
 di tes ini kita ingin menambahkan pdf signer. Worker yg perlu ditambahkan ada dua: *Crypto token* dan *pdfsigner*
 
-#### alternative 1, using tmeplate
+#### alternative 1, using template
 
 ##### Add Crypto Token
 
@@ -135,25 +136,31 @@ di tes ini kita ingin menambahkan pdf signer. Worker yg perlu ditambahkan ada du
 
 #### Autentikasi WS Client Signer 
 
-##### buat certificate untuk WS client 
+##### buat certificate untuk WS API client 
 
 Caranya sama dengan generate certificate lainnya dan pastikan CN nya sama dengan host signserver (misal ss.gehirn.org):
 
- - `keytool -genkey -alias buatmrtdsodclient -keyalg RSA -keypass passw0rd -storepass passw0rd -keystore keystore.jks`
- - `keytool -export -alias buatmrtdsodclient -storepass passw0rd -keystore keystore.jks -file server.cer`
- - `keytool -import -v -trustcacerts -alias buatmrtdsodclient -file server.cer -keypass passw0rd_cacert -storepass passw0rd_cacert -keystore cacerts.jks`
+ - `keytool -genkey -alias mrtdsodauthclient -keyalg RSA -keypass passw0rd -storepass passw0rd -keystore mrtdauth_keystore.jks`   
+ untuk membedakan dengan cert lainnya akan digunakan full DN sbb: *CN=ss.gehirn.org, OU=signserver, O=primekey, L=Depok Timur, ST=Jabar, C=ID*
+ - `keytool -export -alias mrtdsodauthclient -storepass passw0rd -keystore mrtdauth_keystore.jks -file mrtdauth_server.cer`   
+ certificate ini juga dimounting ke trusstore sign server agar bisa dikenali oleh signserver selain ditambahkan juga pada konfigurasi *Authorization* worker.   
+ Pada docker compose file certificate dimount ke `/mnt/external/secrets/tls/cas/*.crt`
+ - import juga kedalam truststore client, public key milik signserver untuk mengakses WS Service via HTTPS   
+ `keytool -import -v -trustcacerts -alias ss.gehirn.org -file C:\certa\server.cer -keypass passw0rd_cacert -storepass passw0rd_cacert -keystore mrtdauth_cacerts.jks`
+ - pada aplikasi java, set JVM Option untuk mengarahkan ke keystore   
+ `-Djavax.net.ssl.keyStore=` dan `-Djavax.net.ssl.keyStorePassword=`   
+ sementara untuk mengakses wsdl atau mengirim request diarahkan ke truststore yg berisi certificate sign server.   
+ `-Djavax.net.ssl.trustStore` dan `-Djavax.net.ssl.trustStorePassword`
 
-Dengan tambahan command untuk export cert based X905
- - `keytool -export -alias buatmrtdsodclient -storepass passw0rd -keystore keystore.jks -rfc -file server2.cer`
- 
-Jika diperlukan, import juga kedalam truststore public key milik signserver untuk mengakses WSDL via HTTPS
 
- - `keytool -import -v -trustcacerts -alias ss.gehirn.org -file C:\certa\server.cer -keypass passw0rd_cacert -storepass passw0rd_cacert -keystore cacerts.jks`
+Dengan tambahan command untuk export cert based X905 yang akan di load pada konfigurasi  *Add authorized Client* pada worker (lihat poin pembahasan selanjutnya *instal certificate untuk WS client*)
+ - `keytool -export -alias mrtdsodauthclient -storepass passw0rd -keystore mrtdauth_keystore.jks -rfc -file mrtdauth_server_x905.cer`
+
 
 ##### instal certificate untuk WS client
 
- - Pasang certificate untuk Client Certification pada konfigurasi Authorization pada Web Admin bagian worker
-    - CN certificate will be: http://ss.gehirn.org:8080/signserver/ClientWSService/ClientWS
+ - Pasang certificate untuk Client Certification pada konfigurasi *Authorization* pada Web Admin bagian worker
+    - CN certificate will be: *ss.gehirn.org*, gunakan pada bagian konfigurasi *Choose certificate field:* 
  - tambahkan atau ubah konfigurasi `AUTHTYPE` menjadi `CLIENTCERT`
  - Jika menggunakan soapui:
      - klik node project dan konfigurasikan di 'WS-Security Configuration -> Keystores tab'
@@ -162,6 +169,14 @@ Jika diperlukan, import juga kedalam truststore public key milik signserver untu
  - Jika menggunakan java console apps (java main atau seperti di junit method test)
      - import signserver certificate ke cacerts jdk di path `$java_home\jrlib\security\cacerts`, contoh `C:\jdk1.8.0_202\jre\lib\security\cacerts`
          - `keytool -import -v -trustcacerts -alias ss.gehirn.org -file C:\certa\server.cer -keypass changeit -storepass changeit -keystore cacerts`
+     - atau menggunakan opsi -Djavax.net.ssl.keyStore, -Djavax.net.ssl.keyStorePassword, -Djavax.net.ssl.trustStore, -Djavax.net.ssl.trustStorePassword. Lihat catatan untuk java apps akses WS
+
+
+##### catatan untuk java apps akses WS 
+
+jvm : 
+` -Djavax.net.ssl.trustStore=C:\certa\cacerts_4_java_apps.jks -Djavax.net.ssl.trustStorePassword=passw0rd_cacert`   
+`-Djavax.net.ssl.keyStorePassword=passw0rd -Djavax.net.ssl.keyStore=C:\tuk_ws\mrtdauth_keystore.jks`
 
 ## referensi
 
