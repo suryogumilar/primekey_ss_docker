@@ -185,3 +185,38 @@ jvm :
 - https://github.com/primekeydevs/containers
 - https://db-blog.web.cern.ch/blog/luis-rodriguez-fernandez/2014-07-java-soap-client-certificate-authentication
 - https://stackoverflow.com/questions/15755293/apache-cxf-wsdl-download-via-ssl-tls
+
+
+## Rest Microservices
+
+Rest service menggunakan code dari [sini](https://github.com/suryogumilar/RestClientSignServer)
+
+Embedded Microservice as REST routing ke signserver pada file `docker-compose-withmicroservice.yml`
+
+Pada bagian volume untuk service rest-service adalah truststore dan keystore milik rest service (cxf) yang berkomunikasi dengan signserver   
+```
+  volumes:
+      
+      - ../certa/cacerts_4_java_apps.jks:/mnt/forss/cacerts_4_java_apps.jks:ro
+      - ../dckr_vols/tuk_ws/mrtdauth_keystore.jks:/mnt/forss/mrtdauth_keystore.jks
+```
+
+untuk rest service sendiri yang berkomunikasi dengan client yang mengakses rest WS service pada bagian   
+```
+  volumes:
+      - ../apps_folder:/usr/src/app
+      - ../dckr_vols/tuk_rest/certificate.p12:/mnt/forrest/certificate.p12:ro
+...
+      - ../dckr_vols/tuk_rest/truststore_rest_service.jks:/mnt/forrest/truststore_rest_service.jks:ro
+```
+
+untuk lebih jelasnya bisa dilihat pada bagian *contoh script* dari README [RestClientSignServer](https://github.com/suryogumilar/RestClientSignServer)
+
+
+### run all service 
+
+`docker-compose --project-name signserver -f .\docker-compose-withmicroservice.yml up`
+
+`docker-compose --project-name signserver -f .\docker-compose-withmicroservice.yml down`
+
+`docker-compose --project-name signserver -f .\docker-compose-withmicroservice.yml down --remove-orphans --volumes`

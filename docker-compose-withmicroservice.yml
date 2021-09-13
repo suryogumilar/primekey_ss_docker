@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  signserver-service:
+    container_name: signserver
+    image: primekey/signserver-ce:5.2.0
+    ports:
+      - 8443:8443
+      - 443:8443
+      - 8080:8080
+    hostname: ss.gehirn.org
+    volumes:
+      - ../dckr_vols:/mnt/uyo
+      - ../certa/keystore.jks:/mnt/persistent/secrets/tls/ss.gehirn.org/server.jks:ro
+      - ../certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.gehirn.org/server.storepasswd:ro
+      - ../certa_pem/certificate.pem:/mnt/external/secrets/tls/cas/ManagementCA1.crt:ro
+      - ../dckr_vols/tuk_ws/mrtdauth_server.cer:/mnt/external/secrets/tls/cas/ManagementCA2.crt:ro
+  rest-service:
+    container_name: restcxf
+    image: local-springboot-service:0.0.1
+    ports:
+      - 8089:8089
+    hostname: ss.restservice.org
+    environment:
+      - RUN_SCRIPT=./run.sh
+    volumes:
+      - ../certa/cacerts_4_java_apps.jks:/mnt/forss/cacerts_4_java_apps.jks:ro
+      - ../dckr_vols/tuk_ws/mrtdauth_keystore.jks:/mnt/forss/mrtdauth_keystore.jks:ro
+      - ../apps_folder:/usr/src/app
+      - ../dckr_vols/tuk_rest/certificate.p12:/mnt/forrest/certificate.p12:ro
+      - ../dckr_vols/tuk_rest/truststore_rest_service.jks:/mnt/forrest/truststore_rest_service.jks:ro
+    depends_on:
+      - signserver-service
