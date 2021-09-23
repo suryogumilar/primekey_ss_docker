@@ -8,6 +8,9 @@ using primekey signserver
 
 `docker-compose --project-name signserver -f .\docker-compose.yml down --remove-orphans --volumes`
 
+#### scriptfor testing
+
+`docker run -it --rm --name signserver_test -p 8443:8443 -p 443:8443 -p 8080:8080 -h ss.gehirn.org -v .\certa_pem\certificate.pem:/mnt/external/secrets/tls/cas/ManagementCA1.crt -v .\certa\usingejbca_cert\privet_ssgehirn.key:/mnt/persistent/secrets/tls/ss.gehirn.org/server.key primekey/signserver-ce:5.2.0`
 
 ## setting up pki signserver
 
