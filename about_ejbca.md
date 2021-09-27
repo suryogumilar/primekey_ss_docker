@@ -19,10 +19,10 @@ Akses https://ca.gehirn.org:9443/ejbca/adminweb/
  - clone profile **Server** dan beri nama Certificate Profiles yang sudah di clone, misal *CSR Server* (CSR = Certificate Signing Request. Pada case ini kita akam membuat server untuk melayani csr). Tekan  *Create From Template*
  - Edit profile *CSR Server*
      - pada *Key Usage* pilih *use* dan *critical*
-     - pilih juga opsi *Digital Signature* dan *Key encipherment*
+     - pilih juga opsi *Digital Signature* dan *Key encipherment* tambahan: *Key agreement*
      - pada *Extended key usage* pilih *Use*
-     - pilih juga *Server authentication* dan *client authentication*
-     - pada *Authority Information Access* Centang bagian *Use* dan gunakan OCSP Locator yang sudah didefinisikan sebelumnya pada CA (Use CA defined OCSP locator).
+     - pilih juga *Server authentication* dan *client authentication* tambahan: *CSN 369791 TLS Client/Server (SPOC PKI is a regular X.509 CA that issues TLS certificates to servers and clients in the SPOC ecosystem -single point of contact)*
+     - pada *Authority Information Access* Centang bagian *Use* dan gunakan OCSP Locator yang sudah didefinisikan sebelumnya pada CA (*Use CA defined OCSP locator*) dan tambahan: (*Use CA defined CA issuer*).
  - go to *RA Functions* dan ke *End Entity Profiles*
      - tambahkan entry *CSR Profile* (type it and then add)
  - Selanjutnya mari kita tambahkan entitas yang nantinya akan *digunakan untuk mengenerate sebuah certificate*. Caranya:
@@ -31,8 +31,10 @@ Akses https://ca.gehirn.org:9443/ejbca/adminweb/
      - Masukkan Username dan Password sesuai dengan yang kita inginkan (dalam hal ini usernamenya kita tentukan *melcior* - bisa apa saja)
      - Masukkan alamat email.
      - Pada contoh kali ini, untuk Subject DN Attributes, Saya hanya menggunakan CN (Common Name). Isi sesuai dengan FQDN Server yang ingin kita pasangkan Sertifikat SSL (misal ss.gehirn.org).
-     - Di bagian Main Certificate Data, Pilih CSR Server sebagai Certificate Profile. Pilih juga CA yang akan menerbitkan sertifikat tersebut. Yang paling penting adalah Token HARUS diisi dengan User Generated, bukan PEM atau p12.
      - Kalau sudah selesai, tekan tombol Add
+ - pada laman *End Entity Profile* ditambahkan user melcior tadi, serta CN adalah ss.gehirn.org (coba tambahan)
+ - pada *Available Certificate Profiles* pilih juga *CSR Server*
+     - Di bagian Main Certificate Data (pada laman *End Entity Profile* di versi 7.4.3.2), Pilih CSR Server sebagai Certificate Profile. Pilih juga CA yang akan menerbitkan sertifikat tersebut. Yang paling penting adalah Token HARUS diisi dengan *User Generated*, bukan PEM atau p12.
 
 ### Pembuatan CSR (Certificate Signing Request) di Server yang akan dipasang certificate
 
@@ -89,8 +91,11 @@ dari keytool ketika import dari pkcs ke jks
 The JKS keystore uses a proprietary format. It is recommended to migrate to PKCS12 which is an industry standard format using:   
 `keytool -importkeystore -srckeystore keystore.jks -destkeystore keystore.jks -deststoretype pkcs12`
 
+##### sign server primekey docker container
 
+command untuk run container signserver untuk testing:
 
+`docker run -it --rm --name signserver_test -p 8443:8443 -p 443:8443 -p 8080:8080 -h ss.gehirn.org -v .\certa_pem\certificate.pem:/mnt/external/secrets/tls/cas/ManagementCA1.crt -v .\certa\usingejbca_cert\keystore.jks:/mnt/persistent/secrets/tls/ss.gehirn.org/server.jks -v .\certa\usingejbca_cert\keystore.storepasswd:/mnt/persistent/secrets/tls/ss.gehirn.org/server.storepasswd primekey/signserver-ce:5.2.0`
 
 ### referensi tambahan: build image untuk openssl lib and tools
 
