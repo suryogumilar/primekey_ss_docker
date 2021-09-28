@@ -19,14 +19,18 @@ Akses https://ca.gehirn.org:9443/ejbca/adminweb/
  - clone profile **Server** dan beri nama Certificate Profiles yang sudah di clone, misal *CSR Server* (CSR = Certificate Signing Request. Pada case ini kita akam membuat server untuk melayani csr). Tekan  *Create From Template*
  - Edit profile *CSR Server*
      - pada *Key Usage* pilih *use* dan *critical*
-     - pilih juga opsi *Digital Signature* dan *Key encipherment* tambahan optional: *Key agreement*
+     - pilih juga opsi *Digital Signature* dan *Key encipherment*
      - pada *Extended key usage* pilih *Use*
-         - pilih juga *Server authentication* dan *client authentication* tambahan optional: *CSN 369791 TLS Client/Server (SPOC PKI is a regular X.509 CA that issues TLS certificates to servers and clients in the SPOC ecosystem -single point of contact)* dan *Any Extended Key Usage*
+         - pilih juga *Server authentication* dan *client authentication* 
      - pada *Authority Information Access* Centang bagian *Use* dan gunakan OCSP Locator yang sudah didefinisikan sebelumnya pada CA (*Use CA defined OCSP locator*) dan tambahan: (*Use CA defined CA issuer*).
      - Entry *Available CAs* set ke *ManagementCA*
      - Save
  - go to *RA Functions* dan ke *End Entity Profiles*
-     - tambahkan entry *CSR Profile* (type it and then add)
+     - tambahkan entry *CSR Profile* (type it and then add) lalu edit
+     - pada laman *End Entity Profile* edit CSR Profile dan ditambahkan user melcior tadi pada kolom username, serta CN adalah ss.gehirn.org. Opsi *modifiable*-nya di-*untick*. Bahkan jika ada opsi *modifiable* pada pilihan lain coba di-*untick*. Selain itu entry *End Entity E-mail* di *untick* pilihan *Use* nya
+     - masih di laman *End Entity Profile* edit; pada *Available Certificate Profiles* pilih juga *CSR Server*
+     - Di bagian *Main Certificate Data* (masih pada laman edit *End Entity Profile* di versi 7.4.3.2), Pilih CSR Server (choose CSR Server only) sebagai *Default Certificate Profile*. Pilih juga CA yang akan menerbitkan sertifikat tersebut (biasanya ManagementCA). Yang paling penting adalah Token HARUS diisi dengan *User Generated*, bukan PEM atau p12.
+     - Available Tokens pilih User Generated saja
  - Selanjutnya mari kita tambahkan entitas yang nantinya akan *digunakan untuk mengenerate sebuah certificate*. Caranya:
      - Pilih *Add Entity* (atau *Add End Entity* di versi 7.4.3.2).
      - Pada bagian *End Entity Profile* pada laman tsb, Pilih CSR Server.
@@ -34,10 +38,6 @@ Akses https://ca.gehirn.org:9443/ejbca/adminweb/
      - Masukkan alamat email.
      - Pada contoh kali ini, untuk Subject DN Attributes, Saya hanya menggunakan CN (Common Name). Isi sesuai dengan FQDN Server yang ingin kita pasangkan Sertifikat SSL (misal ss.gehirn.org).
      - Kalau sudah selesai, tekan tombol Add
- - pada laman *End Entity Profile* edit CSR Profile dan ditambahkan user melcior tadi pada kolom username, serta CN adalah ss.gehirn.org. Opsi *modifiable*-nya di-*untick*. Bahkan jika ada opsi *modifiable* pada pilihan lain coba di-*untick*. Selain itu entry *End Entity E-mail* di *untick* pilihan *Use* nya
- - masih di laman *End Entity Profile* edit; pada *Available Certificate Profiles* pilih juga *CSR Server*
-     - Di bagian *Main Certificate Data* (masih pada laman edit *End Entity Profile* di versi 7.4.3.2), Pilih CSR Server (choose CSR Server only) sebagai *Default Certificate Profile*. Pilih juga CA yang akan menerbitkan sertifikat tersebut (biasanya ManagementCA). Yang paling penting adalah Token HARUS diisi dengan *User Generated*, bukan PEM atau p12.
-     - Available Tokens pilih User Generated saja
  - Save
 
 ### Pembuatan CSR (Certificate Signing Request) di Server yang akan dipasang certificate
