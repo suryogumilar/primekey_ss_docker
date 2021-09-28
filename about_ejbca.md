@@ -15,14 +15,15 @@ https://ca.gehirn.org:9443/ejbca/adminweb/
 
 Akses https://ca.gehirn.org:9443/ejbca/adminweb/
 
- - masuk ke **Certificate Profiles**
+ - masuk ke **Certificate Profiles** under *CA Functions*
  - clone profile **Server** dan beri nama Certificate Profiles yang sudah di clone, misal *CSR Server* (CSR = Certificate Signing Request. Pada case ini kita akam membuat server untuk melayani csr). Tekan  *Create From Template*
  - Edit profile *CSR Server*
      - pada *Key Usage* pilih *use* dan *critical*
-     - pilih juga opsi *Digital Signature* dan *Key encipherment* tambahan: *Key agreement*
+     - pilih juga opsi *Digital Signature* dan *Key encipherment* tambahan optional: *Key agreement*
      - pada *Extended key usage* pilih *Use*
-     - pilih juga *Server authentication* dan *client authentication* tambahan: *CSN 369791 TLS Client/Server (SPOC PKI is a regular X.509 CA that issues TLS certificates to servers and clients in the SPOC ecosystem -single point of contact)*
+         - pilih juga *Server authentication* dan *client authentication* tambahan optional: *CSN 369791 TLS Client/Server (SPOC PKI is a regular X.509 CA that issues TLS certificates to servers and clients in the SPOC ecosystem -single point of contact)*
      - pada *Authority Information Access* Centang bagian *Use* dan gunakan OCSP Locator yang sudah didefinisikan sebelumnya pada CA (*Use CA defined OCSP locator*) dan tambahan: (*Use CA defined CA issuer*).
+     - Save
  - go to *RA Functions* dan ke *End Entity Profiles*
      - tambahkan entry *CSR Profile* (type it and then add)
  - Selanjutnya mari kita tambahkan entitas yang nantinya akan *digunakan untuk mengenerate sebuah certificate*. Caranya:
@@ -32,9 +33,9 @@ Akses https://ca.gehirn.org:9443/ejbca/adminweb/
      - Masukkan alamat email.
      - Pada contoh kali ini, untuk Subject DN Attributes, Saya hanya menggunakan CN (Common Name). Isi sesuai dengan FQDN Server yang ingin kita pasangkan Sertifikat SSL (misal ss.gehirn.org).
      - Kalau sudah selesai, tekan tombol Add
- - pada laman *End Entity Profile* ditambahkan user melcior tadi, serta CN adalah ss.gehirn.org (coba tambahan)
- - pada *Available Certificate Profiles* pilih juga *CSR Server*
-     - Di bagian Main Certificate Data (pada laman *End Entity Profile* di versi 7.4.3.2), Pilih CSR Server sebagai Certificate Profile. Pilih juga CA yang akan menerbitkan sertifikat tersebut. Yang paling penting adalah Token HARUS diisi dengan *User Generated*, bukan PEM atau p12.
+ - pada laman *End Entity Profile* edit CSR Profile dan ditambahkan user melcior tadi pada kolom username, serta CN adalah ss.gehirn.org 
+ - masih di laman *End Entity Profile* edit; pada *Available Certificate Profiles* pilih juga *CSR Server*
+     - Di bagian Main Certificate Data (masih pada laman edit *End Entity Profile* di versi 7.4.3.2), Pilih CSR Server sebagai *Default Certificate Profile*. Pilih juga CA yang akan menerbitkan sertifikat tersebut (biasanya ManagementCA). Yang paling penting adalah Token HARUS diisi dengan *User Generated*, bukan PEM atau p12.
 
 ### Pembuatan CSR (Certificate Signing Request) di Server yang akan dipasang certificate
 
@@ -83,7 +84,13 @@ Check dengan command:
 
 
 lalu keystore.jks bisa dipasang di server/ signserver   
-certificate CA (CN=ManagementCA) juga dipasang di browser
+
+certificate CA (CN=ManagementCA) juga dipasang di browser, diambil melalui laman *Fetch CA certificates* pada link [ini](https://ca.gehirn.org:9443/ejbca/retrieve/ca_certs.jsp).   
+Impor cert tersebut ke dalam browser (firefox). Tahap pertama, Buka browser dan masuk ke dalam bagian *Preferences -> Advanced -> Certificates -> View Certificates*. Pada bagian Authorities, pilih Import dan kemudian upload Root CA Cert yang sudah di-download tadi (file biasanya : ManagementCA.pem). Pilih trust untuk identify websites dan (opsional) identify email users
+
+###### error: SEC_ERROR_INADEQUATE_CERT_TYPE
+
+Kadang muncul error : SEC_ERROR_INADEQUATE_CERT_TYPE (not yet solved)
 
 #####  note
 dari keytool ketika import dari pkcs ke jks 
