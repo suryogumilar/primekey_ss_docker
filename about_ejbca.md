@@ -11,6 +11,9 @@ to run:
 akses ke link   
 https://ca.gehirn.org:9443/ejbca/adminweb/
 
+*catatan: jika menggunakan chrome mungkin akan menemui error NET::ERR_CERT_AUTHORITY_INVALID dan setiap akses laman tersebut kadang akan muncul page konfirmasi. Gunakan incognito mode untuk mengaksesnya agar terhindar dari page konfirmasi chrome yang sedikit mengganggu saat edit konfigurasi*
+
+
 ### membuat Certificate
 
 Akses https://ca.gehirn.org:9443/ejbca/adminweb/
@@ -26,16 +29,19 @@ Akses https://ca.gehirn.org:9443/ejbca/adminweb/
      - Entry *Available CAs* set ke *ManagementCA*
      - Save
  - go to *RA Functions* dan ke *End Entity Profiles*
-     - tambahkan entry *CSR Profile* (type it and then add) lalu edit
-     - pada laman *End Entity Profile* edit CSR Profile dan ditambahkan user melcior tadi pada kolom username, serta CN adalah ss.gehirn.org. Opsi *modifiable*-nya di-*untick*. Bahkan jika ada opsi *modifiable* pada pilihan lain coba di-*untick*. Selain itu entry *End Entity E-mail* di *untick* pilihan *Use* nya
-     - masih di laman *End Entity Profile* edit; pada *Available Certificate Profiles* pilih juga *CSR Server*
-     - Di bagian *Main Certificate Data* (masih pada laman edit *End Entity Profile* di versi 7.4.3.2), Pilih CSR Server (choose CSR Server only) sebagai *Default Certificate Profile*. Pilih juga CA yang akan menerbitkan sertifikat tersebut (biasanya ManagementCA). Yang paling penting adalah Token HARUS diisi dengan *User Generated*, bukan PEM atau p12.
-     - Available Tokens pilih User Generated saja
+     - tambahkan entry *CSR Profile* (type it and then add) lalu edit: 
+       - *End Entity E-mail* di-*untick* pada opsi *Use* 
+       - *untick* opsi *modifiable* pada saat isi *CN, Common name*
+       - *Default Certificate Profile* ke *CSR Server*
+       - *Available Certificate Profiles* dipilih *CSR Server* saja
+       - *Default CA* diisi *ManagementCA* begitu juga dengan entry *Available CAs*
+       - *Default Token* diisi *User Generated*
+       - *Available Tokens* diisi *User Generated* saja
  - Selanjutnya mari kita tambahkan entitas yang nantinya akan *digunakan untuk mengenerate sebuah certificate*. Caranya:
      - Pilih *Add Entity* (atau *Add End Entity* di versi 7.4.3.2).
      - Pada bagian *End Entity Profile* pada laman tsb, Pilih CSR Server.
      - Masukkan Username dan Password sesuai dengan yang kita inginkan (dalam hal ini usernamenya kita tentukan *melcior* - bisa apa saja)
-     - Masukkan alamat email.
+     - Masukkan alamat email jika kita pilih *Use* pada entry *End Entity E-mail* pada langkah sebelumnya.
      - Pada contoh kali ini, untuk Subject DN Attributes, Saya hanya menggunakan CN (Common Name). Isi sesuai dengan FQDN Server yang ingin kita pasangkan Sertifikat SSL (misal ss.gehirn.org).
      - Kalau sudah selesai, tekan tombol Add
  - Save
