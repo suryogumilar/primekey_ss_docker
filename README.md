@@ -196,6 +196,7 @@ When using the AuthenticationSession (default) all users have a STATUS. The stat
 
 lihat link [ini](https://download.primekey.com/docs/EJBCA-Enterprise/6_5_5/faq.html#errorUserStatus) untuk detailnya
 
+##### install the signer certificates issued by the CA in SignServer
 
 Then, to install the signer certificates issued by the CA in SignServer, do the following:
 
