@@ -137,6 +137,73 @@ di tes ini kita ingin menambahkan pdf signer. Worker yg perlu ditambahkan ada du
  - Click Browse to select a PDF file.
  - Click Submit and store the resulting signature file.
 
+#### alternative 2, Untuk menambahkan custom sign key and certificate untuk MRTOD
+
+##### Add Crypto token
+- Pada laman *SignServer Administration Web* tambahkan worker *keystore-crypto.properties*. Load dari template
+- Update the following in the configuration:
+    - Change "WORKERGENID1.KEYSTORETYPE=PKCS12" to "WORKERGENID1.KEYSTORETYPE=INTERNAL". (Opsi INTERNAL = to use an in-configuration keystore in other words INTERNAL to use a keystore stored in the database (tied to the crypto worker))
+      - When Using an Internal Keystore
+        The content of the keystore is not part of the regular worker properties. Thus, it is not included when running the dump properties command. It is also removed when removing the crypto worker (or regular worker when using the legacy method to set up crypto tokens). To backup the content of the crypto token, a database backup should be made. The password supplied when activating the token the first time will be used as the keystore password. [referensi](https://download.primekey.se/docs/SignServer-Enterprise/current/KeyStoreCryptoToken.html)
+
+    - Remove the line starting with "WORKERGENID1.KEYSTOREPATH".
+- Apply untuk menambakan Crypto token
+- Aktifasi Crypto token yang telah dibuat
+- Masukkan passwrd baru, jangan sampai lupa karena dibutuhkan saat aktifasi ulang saat signserver direstart atau tetapkan pada property `WORKERGENID1.KEYSTOREPASSWORD=[isi dengan password]` cara ini membuat token "auto-activated"
+- setelahnya masuk ke entry crypto token tersebut dan pilih tab *'Crypto Token'* untuk generate key
+- click *Generate key*.
+- specify a New Key Alias name for the key, for example "mrtdsod_test"
+- Click *Generate* and verify that the worker is now in state **ACTIVE**.
+
+##### Add Signer
+
+Seperti langkah yang dijelaskan sebelumnya saat add Signer alternatif 1:   
+ - On the *SignServer Workers* page, click *Add*.
+ - Click *From Template*.
+ - Select the properties in the *Load From Template* list for the signer to add, for example mrtdsodsigner.properties and click Next.
+ - edit *WORKERGENID1.NAME* beri nama yang unik misal 'MRTDSODSignerCustom'.
+ - edit *WORKERGENID1.CRYPTOTOKEN* set nama Crypto Token yang tadi dibuat
+ - Click Apply to load the configuration. The worker is OFFLINE as it needs a key and certificate.
+ 
+##### Generate Keys and Request and Install Certificates
+
+To generate keys for the signer:
+ - Select the signer in the Workers list, and click *Renew key*.
+ - Under *Renew Keys*, specify the following:
+     - Select *Key Algorithm*, for example RSA.
+     - Select *Key Specification*, for example 3072.
+     - Specify a name for the new key, for example 'mrtdsodsignerkey001'.
+     - Click *Generate*.
+
+To generate the CSR for the signer:
+ - Select the signer in the Workers list, and click *Generate CSR*.
+ - Specify a DN, for example "CN=MrtdsodSigner 0001", and then click Generate.
+ - Click *Download* and store the CSR/PKCS#10 file (extension is .p10 file - X905).
+
+Next, bring the CSR to the CA and obtain a certificate in PEM format for it.   
+
+ - go to ca_server (using ejbca in this case)
+ - pada [halaman utama dari EJBCA](https://ca.gehirn.org:9443/ejbca/) pilih *Create Certificate from CSR* pada bagian *enroll*.
+ - Di bagian Enroll, masukkan username dari entitas yang sudah kita buat sebelumnya di bagian End Entity Profile pada kolom username dan masukkan juga password yang kita buat bersamaan dengan username tersebut pada entry Enrollment code.
+ - Upload file CSR yang sudah kita buat di bagian Request File.
+ - Pada bagian Result Type, pilih *PEM – full certificate chain*, download pem file
+
+###### troubleshoot ejbca 
+jika muncul error saat Create Certificate from CSR seperti ini:   
+*Got request with status GENERATED (40), NEW, FAILED or INPROCESS required:*
+
+When using the AuthenticationSession (default) all users have a STATUS. The status lifecycle begins with NEW and ends with REVOKED. Only when the status is NEW, FAILED or INPROCESS is it possible to issue a certificate to a user. After a certificate has been issued, the status is set to GENERATED. This works like a one-time-password scheme. To issue a new certificate to the user his/her status **must be reset** to NEW, FAILED or INPROCESS. This can be done with the Admin GUI or: `bin/ejbca.sh ra setendentitystatus username status` (Status '10' is NEW) example : `./bin/ejbca.sh ra setendentitystatus --username melcior -S 10`. Just enter `bin/ejbca.sh ra setendentitystatus` to see a list of all status codes.
+
+lihat link [ini](https://download.primekey.com/docs/EJBCA-Enterprise/6_5_5/faq.html#errorUserStatus) untuk detailnya
+
+
+Then, to install the signer certificates issued by the CA in SignServer, do the following:
+
+ - Select the signer in the *SignServer Workers* list, and click *Install Certificates*.
+ - Browse for the PEM certificate file and click Add.
+ - Click *Install* and confirm that the signer is now listed as *ACTIVE* and ready to be used.
+
+
 #### Autentikasi WS Client Signer 
 
 ##### buat certificate untuk WS API client 
@@ -188,7 +255,7 @@ jvm :
 - https://github.com/primekeydevs/containers
 - https://db-blog.web.cern.ch/blog/luis-rodriguez-fernandez/2014-07-java-soap-client-certificate-authentication
 - https://stackoverflow.com/questions/15755293/apache-cxf-wsdl-download-via-ssl-tls
-
+- https://download.primekey.com/docs/EJBCA-Enterprise/6_5_5/faq.html#errorUserStatus
 
 ## Rest Microservices
 
