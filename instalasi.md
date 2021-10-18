@@ -4,14 +4,13 @@ instalasi manual. menggunakan image centos8.3.2011
 
 ## container
 
-`docker run -itd --privileged -v C:\insta:/mnt/insta -p 28080:8080 -p 28443:8443 --name insta_ss centos:centos8.3.2011`
+`docker run -itd -v C:\insta:/mnt/insta -p 28080:8080 -p 28443:8443 -p 28442:8442 -p 29990:9990 --name insta_ss centos:centos8.3.2011`
 
 `docker exec -it insta_ss bash`
 
-catatan: docker container sebagai testing instalasi harus run in privileged mode karena butuh systemctl jika tidak akan dapat error:
-> System has not been booted with systemd as init system (PID 1). Can't operate.
-Failed to connect to bus: Host is down
+### port 
 
+Port 8080 akan digunakan untuk traffic HTTP umum, port 8442 akan digunakan untuk HTTPS dengan autentikasi server, dan port 8443 untuk HTTPS dengan autentikasi klien dan server. Sementara 9990 akan digunakan sebagai port administrasi wildfly.
 
 ## prerequisite
 
@@ -28,31 +27,31 @@ Failed to connect to bus: Host is down
 ensuring your system is up-to-date.
 
 ```
-dnf install epel-release
-dnf update
+dnf --assumeyes install epel-release
+dnf --assumeyes update
 ```
 
 instal script service jika belum ada
 
-`dnf install initscripts`
+`dnf --assumeyes install initscripts`
 
 install nano untuk edit script
 
-`dnf install nano`
+`dnf --assumeyes install nano`
 
 install unzip kalau belum ada
 
-`dnf install unzip`
+`dnf --assumeyes install unzip`
 
 instal wget
 
-`dnf install wget`
+`dnf --assumeyes install wget`
 
 ## instalasi
 
 ### instal open JDK 8
 
-`dnf install java-1.8.0-openjdk-devel`
+`dnf --assumeyes install java-1.8.0-openjdk-devel`
 
 lalu test JAVA_HOME, set jika belum
 
@@ -105,10 +104,10 @@ WildFly, formerly known as JBoss AS, or simply JBoss, is an application server a
 instal menggunakan script `wildfly.sh` akan menginstal di direktori `/opt/wildfly`. Ubah script sesuaikan dengan versi Wildfly yang digunakan.
 
 ```sh
-WILDFLY_VERSION=25.0.0.Final
+WILDFLY_VERSION=10.1.0.Final
 WILDFLY_FILENAME=wildfly-$WILDFLY_VERSION
 WILDFLY_ARCHIVE_NAME=$WILDFLY_FILENAME.tar.gz
-WILDFLY_DOWNLOAD_ADDRESS=https://github.com/wildfly/wildfly/releases/download/$WILDFLY_VERSION/$WILDFLY_ARCHIVE_NAME
+WILDFLY_DOWNLOAD_ADDRESS=https://download.jboss.org/wildfly/$WILDFLY_VERSION/$WILDFLY_ARCHIVE_NAME
 ```
 
 execute the script
@@ -171,18 +170,128 @@ export WILDFLY_CONFIG
 export WILDFLY_MODE
 export WILDFLY_BIND
 export LAUNCH_JBOSS_IN_BACKGROUND
+
+export APPSRV_HOME=/opt/wildfly
+export PATH=$PATH:$JBOSS_HOME/bin
 ```
 
 sebagai user **wildfly** start melaui command : 
+
+`docker exec -it -u wildfly insta_ss bash`
 
 `/opt/wildfly/bin/launch.sh $WILDFLY_MODE $WILDFLY_CONFIG $WILDFLY_BIND`
 
 ##### tes if wildfly is running
 
-open browser buka http://localhost:8080 
+open browser buka http://localhost:8080
+
+uji untuk masuk ke halaman admin dari Wildfly: http://localhost:9990 
+
+#### Konfigurasi Web Server Keystore
+
+Kopikan keystore dan trustore yang telah dibuat ke path:
+
+`WILDFLY_HOME/standalone/configuration/keystore/keystore.jks`
+
+`WILDFLY_HOME/standalone/configuration/keystore/truststore.jks`
+
+
+as user wildfly :
+
+```
+mkdir -p  $WILDFLY_HOME/standalone/configuration/keystore 
+cp keystore.jks $WILDFLY_HOME/standalone/configuration/keystore/keystore.jks
+cp keystore.storepasswd $WILDFLY_HOME/standalone/configuration/keystore/keystore.storepasswd
+```
+
+add user certificate to trustore:
+
+```
+keytool -import -v -trustcacerts -alias ss.gehirn.org -file certificate.pem -keypass passw0rd -storepass passw0rd -keystore $WILDFLY_HOME/standalone/configuration/keystore/truststore.jks
+
+nano $WILDFLY_HOME/standalone/configuration/keystore/truststore.storepasswd
+```
+
+## Konfigurasi TLS dan HTTP
+
+ - Jalankan JBoss CLI dengan perintah:
+   ```
+   jboss-cli.sh
+   connect
+   ```
+ - Untuk menghapus konfigurasi TLS dan HTTP yang sudah ada dan mengizinkan port 8443, jalankan perintah berikut:   
+   ```
+   /subsystem=undertow/server=default-server/http-listener=default:remove 
+   /subsystem=undertow/server=default-server/https-listener=https:remove 
+   /socket-binding-group=standard-sockets/socket-binding=http:remove
+   /socket-binding-group=standard-sockets/socket-binding=https:remove 
+   :reload
+   ```
+ - Konfigurasi interface dengan menggunakan bind address 0.0.0.0   
+   ```
+   /interface=http:add(inet-address="0.0.0.0")
+   /interface=httpspub:add(inet-address="0.0.0.0")
+   /interface=httpspriv:add(inet-address="0.0.0.0")
+   ```
+ - Konfigurasi HTTPS httpspriv listener dan atur agar port privat tersebut membutuhkan sertifikat klien. Gunakan nilai yang tepat untuk key-alias (hostname), password (keystore-password), ca-certificate-password (trustore password), dan protokol yang didukung. Untuk WIldfly 14, gunakan enable-http2=”false” untuk menghindari pesan error dalam log   
+   ```
+   /core-service=management/security-realm=SSLRealm:add()
+   /core-service=management/security-realm=SSLRealm/server-identity=ssl:add(keystore-path="keystore/keystore.jks", keystore-relative-to="jboss.server.config.dir", keystore-password="passw0rd", alias="ss.gehirn.org")
+   :reload
+
+   /core-service=management/security-realm=SSLRealm/authentication=truststore:add(keystore-path="keystore/truststore.jks", keystore-relative-to="jboss.server.config.dir", keystore-password="passw0rd")
+   :reload
+
+   /socket-binding-group=standard-sockets/socket-binding=httpspriv:add(port="8443",interface="httpspriv")
+   /subsystem=undertow/server=default-server/https-listener=httpspriv:add(socket-binding="httpspriv", security-realm="SSLRealm", verify-client=REQUIRED, max-post-size="10485760", enable-http2="true") 
+   ```
+
+ - Configure the default HTTP listener.
+For WildFly 14, instead use enable-http2="false" to avoid error messages in the log. Perintah ini untuk mengaktifkan request http via port 8080.  
+   ```
+   /socket-binding-group=standard-sockets/socket-binding=http:add(port="8080",interface="http")
+   /subsystem=undertow/server=default-server/http-listener=default:add(socket-binding=http, max-post-size="10485760", enable-http2="true")
+   /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=redirect-socket, value="httpspriv")
+   :reload
+   ```
+ - Configure the HTTPS httpspub listener and set up the public SSL port not requiring the client certificate.
+For WildFly 14, instead use enable-http2="false" to avoid error messages in the log.
+   ```
+   /socket-binding-group=standard-sockets/socket-binding=httpspub:add(port="8442",interface="httpspub")
+   /subsystem=undertow/server=default-server/https-listener=httpspub:add(socket-binding="httpspub", security-realm="SSLRealm", max-post-size="10485760", enable-http2="true")
+   ```
+ - Configure the remoting (HTTP) listener and secure the CLI by removing the http-remoting-connector from using the HTTP port and instead use a separate port 4447.
+For WildFly 14, instead use enable-http2="false" to avoid error messages in the log.
+   ```
+   /subsystem=remoting/http-connector=http-remoting-connector:remove
+   /subsystem=remoting/http-connector=http-remoting-connector:add(connector-ref="remoting",security-realm="ApplicationRealm")
+   /socket-binding-group=standard-sockets/socket-binding=remoting:add(port="4447")
+   /subsystem=undertow/server=default-server/http-listener=remoting:add(socket-binding=remoting, max-post-size="10485760", enable-http2="true")
+   ```
+ - In order for the web services to work correctly when requiring client certificate, you need to configure the Web Services Description Language (WSDL) web-host rewriting to use the request host.
+   ```
+   /subsystem=webservices:write-attribute(name=wsdl-host, value=jbossws.undefined.host)
+   /subsystem=webservices:write-attribute(name=modify-wsdl-address, value=true)
+   #If the server is slow, wait before reloading:
+   :reload
+   ```
+ - To configure the URI encoding, run the following:
+   ```
+   /system-property=org.apache.catalina.connector.URI_ENCODING:remove()
+   /system-property=org.apache.catalina.connector.URI_ENCODING:add(value=UTF-8)
+   /system-property=org.apache.catalina.connector.USE_BODY_ENCODING_FOR_QUERY_STRING:remove()
+   /system-property=org.apache.catalina.connector.USE_BODY_ENCODING_FOR_QUERY_STRING:add(value=true)
+   :reload
+   ```   
+   (Failure messages for the two remove commands above are expected if this command is executed for the first time)
+entry hasil update lihat di sini:   
+`/opt/wildfly-10.1.0.Final/standalone/configuration/standalone.xml`
+
+
 
 ## referensi 
 
  - https://blog.goreinnamah.com/blog/2020/06/05/instalasi-signserver-5-2-0/
  - https://en.wikipedia.org/wiki/WildFly
  - https://stackoverflow.com/questions/59466250/docker-system-has-not-been-booted-with-systemd-as-init-system
+ - https://doc.primekey.com/signserver520/signserver-installation
