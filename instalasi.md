@@ -358,6 +358,64 @@ export SIGNSERVER_NODEID=node1
 
 ## Konfigurasi Deployment (signserver_deploy.properties)
 
+```
+cd /opt/signserver
+cp conf/signserver_deploy.properties.sample conf/signserver_deploy.properties
+nano conf/signserver_deploy.properties
+
+## isi
+appserver.home=${env.APPSRV_HOME}
+appserver.type=jboss
+datasource.jndi-name=SignServerDS
+
+database.name=mysql
+database.url=jdbc.mysql://ssmariadb:3306/ssdb
+database.username=root
+database.password=passw0rd
+```
+
+## Deployment
+
+Untuk deployment. Jalankan perintah berikut:
+
+```
+cd /opt/signserver
+./bin/ant deploy
+```
+
+lihat hasil deployment process pada server log di Wildfly, jalankan:
+
+`ls /opt/wildfly/standalone/deployments | grep signserver.ear*`
+
+
+Verifikasi dengan mengakses Signserver, akses halaman web-nya pada link:
+
+*http://ss.gehirn.org:8080/signserver*
+
+uji melalui CLI dan melihat versi Signserver-nya, Jalankan perintah berikut di CLI:
+
+```
+cd /opt/signserver
+./bin/signserver getstatus brief all
+```
+
+akses halaman administrator dari Signserver, arahkan ke:
+
+http://ss.gehirn.org:8443/signserver/adminweb/
+
+Untuk mengizinkan siapapun mengakses halaman admin tersebut secara sementara, jalankan perintah berikut:
+
+cd /opt/signserver
+./bin/signserver wsadmins -allowany
+
+ini mengizinkan administrator mengakses Tab *Workers*, *Global Configuration* dll yang terdapat dalam laman adminweb (http://ss.gehirn.org:8443/signserver/adminweb/)
+
+
+### commit container
+
+docker commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]
+
+
 ## referensi 
 
  - https://blog.goreinnamah.com/blog/2020/06/05/instalasi-signserver-5-2-0/
