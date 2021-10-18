@@ -2,9 +2,13 @@
 
 instalasi manual. menggunakan image centos8.3.2011
 
+## Membuat network container
+
+`docker network create seele_network # Create the network`
+
 ## container
 
-`docker run -itd -v C:\insta:/mnt/insta -p 28080:8080 -p 28443:8443 -p 28442:8442 -p 29990:9990 --name insta_ss centos:centos8.3.2011`
+`docker run -itd -v C:\insta:/mnt/insta -p 28080:8080 -p 28443:8443 -p 28442:8442 -p 29990:9990 --name insta_ss --net seele_network centos:centos8.3.2011`
 
 `docker exec -it insta_ss bash`
 
@@ -34,6 +38,10 @@ dnf --assumeyes update
 instal script service jika belum ada
 
 `dnf --assumeyes install initscripts`
+
+instal net-tools untuk cek network
+
+`dnf --assumeyes install net-tools`
 
 install nano untuk edit script
 
@@ -226,14 +234,16 @@ nano $WILDFLY_HOME/standalone/configuration/keystore/truststore.storepasswd
    /socket-binding-group=standard-sockets/socket-binding=http:remove
    /socket-binding-group=standard-sockets/socket-binding=https:remove 
    :reload
-   ```
+   ```   
+   setelah oeprasi ini, port http(s) tidak bisa diakses, it's okay :)
+   
  - Konfigurasi interface dengan menggunakan bind address 0.0.0.0   
    ```
    /interface=http:add(inet-address="0.0.0.0")
    /interface=httpspub:add(inet-address="0.0.0.0")
    /interface=httpspriv:add(inet-address="0.0.0.0")
    ```
- - Konfigurasi HTTPS httpspriv listener dan atur agar port privat tersebut membutuhkan sertifikat klien. Gunakan nilai yang tepat untuk key-alias (hostname), password (keystore-password), ca-certificate-password (trustore password), dan protokol yang didukung. Untuk WIldfly 14, gunakan enable-http2=”false” untuk menghindari pesan error dalam log   
+ - Konfigurasi HTTPS *httpspriv listener* dan atur agar port privat tersebut membutuhkan sertifikat klien. Gunakan nilai yang tepat untuk key-alias (hostname), password (keystore-password), ca-certificate-password (trustore password), dan protokol yang didukung. Untuk WIldfly 14, gunakan enable-http2=”false” untuk menghindari pesan error dalam log   
    ```
    /core-service=management/security-realm=SSLRealm:add()
    /core-service=management/security-realm=SSLRealm/server-identity=ssl:add(keystore-path="keystore/keystore.jks", keystore-relative-to="jboss.server.config.dir", keystore-password="passw0rd", alias="ss.gehirn.org")
@@ -253,7 +263,8 @@ For WildFly 14, instead use enable-http2="false" to avoid error messages in the 
    /subsystem=undertow/server=default-server/http-listener=default:add(socket-binding=http, max-post-size="10485760", enable-http2="true")
    /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=redirect-socket, value="httpspriv")
    :reload
-   ```
+   ```   
+   after this port http (8080) bisa diakses kembali   
  - Configure the HTTPS httpspub listener and set up the public SSL port not requiring the client certificate.
 For WildFly 14, instead use enable-http2="false" to avoid error messages in the log.
    ```
@@ -283,11 +294,69 @@ For WildFly 14, instead use enable-http2="false" to avoid error messages in the 
    /system-property=org.apache.catalina.connector.USE_BODY_ENCODING_FOR_QUERY_STRING:add(value=true)
    :reload
    ```   
-   (Failure messages for the two remove commands above are expected if this command is executed for the first time)
+   (Failure messages for the two remove commands above are expected if this command is executed for the first time)   
+
 entry hasil update lihat di sini:   
 `/opt/wildfly-10.1.0.Final/standalone/configuration/standalone.xml`
 
+## Database
 
+menggunakan docker   
+`docker pull mariadb:10.6.4`
+
+example:   
+`docker run -p 23306:3306 -itd --name ssmariadb -h ssmariadb -e MARIADB_ROOT_PASSWORD=passw0rd -e MARIADB_DATABASE=ssdb -v C:\my\own\datadir:/var/lib/mysql --net seele_network -d mariadb:10.6.4`
+
+## Konfigurasi Database Driver
+
+```
+cp mariadb-java-client-2.7.4.jar $APPSRV_HOME/standalone/deployments/mariadb-java-client.jar
+```
+
+## Konfigurasi Data Source
+Untuk menambahkan data source agar Signserver bisa menggunakannya, jalankan perintah berikut ini dengan menggunakan Jboss CLI. Data Source yang akan di-deploy ini menggunakan driver dari MariaDB yang dicopy sebelumnya:   
+```
+jboss-cli.sh
+connect
+
+data-source add --name=signserverds --driver-name="mariadb-java-client.jar" --connection-url="jdbc:mysql://ssmariadb:3306/ssdb" --jndi-name="java:/SignServerDS" --use-ccm=true --driver-class="org.mariadb.jdbc.Driver" --user-name="root" --password="passw0rd" --validate-on-match=true --background-validation=false --prepared-statements-cache-size=50 --share-prepared-statements=true --min-pool-size=5 --max-pool-size=150 --pool-prefill=true --transaction-isolation=TRANSACTION_READ_COMMITTED --check-valid-connection-sql="select 1;" --enabled=true
+:reload
+```
+
+## Instalasi Maven
+Maven ini digunakan untuk membangun Signserver dari source. 
+
+`dnf --assumeyes install maven`
+
+## Instalasi Signserver
+
+setelah unduh dan unzip kita build via maven
+
+```
+cd /opt/signserver
+mvn help:effective-settings
+
+./bin/ant init
+
+# build from source
+mvn install -DskipTests
+```
+
+## Set Environment Variables
+
+using nano add :
+```
+nano nano /etc/profile.d/signserver.sh
+
+## signserver.sh 
+
+SIGNSERVER_HOME=/opt/signserver
+export SIGNSERVER_HOME
+export PATH=$SIGNSERVER_HOME/bin:$PATH
+export SIGNSERVER_NODEID=node1
+```
+
+## Konfigurasi Deployment (signserver_deploy.properties)
 
 ## referensi 
 
@@ -295,3 +364,4 @@ entry hasil update lihat di sini:
  - https://en.wikipedia.org/wiki/WildFly
  - https://stackoverflow.com/questions/59466250/docker-system-has-not-been-booted-with-systemd-as-init-system
  - https://doc.primekey.com/signserver520/signserver-installation
+ - https://hub.docker.com/_/mariadb?tab=description
