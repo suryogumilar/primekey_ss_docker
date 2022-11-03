@@ -50,13 +50,151 @@ Akses [https://ca.imigrasi_demo.id:9443/ejbca/adminweb/](https://ca.imigrasi_dem
     * Kalau sudah selesai, tekan tombol **Add**
     
         
+## Pembuatan CSR (Certificate Signing Request) di Sign Server yang akan dipasang certificate    
+
+Buat CSR (Certificate Signing Request). CSR adalah sebuah encoded text yang diberikan kepada sebuah CA (Certification Authority) ketika mengajukan sebuah sertifikat SSL. CSR biasanya berisi informasi yang akan disertakan dalam sertifikat seperti nama organisasi (O), Common Name (nama domain), lokalitas dan negara. CSR juga berisi kunci publik yang akan disertakan dalam sertifikat. Ketika membuat CSR, kita juga akan membuat Private Key.    
+
+
+`openssl req -new -newkey rsa:2048 -nodes -keyout privet_kemludemo.key -out csr_kemludemo.csr`
     
-    
-    
-    
-# Instalasi menggunakan docker
+## Generate Certificate
+
+pada CA Server (ejbca) kita upload CSR yang sudah dibuat tadi untuk generate sertifikat SSL. Caranya:
+
+ * pada halaman utama dari EJBCA [https://ca.imigrasi_demo.id:9443/ejbca/](https://ca.imigrasi_demo.id:9443/ejbca/) pilih **Create Certificate from CSR** pada bagian **Enroll**.
+ * Di bagian Enroll, masukkan username dari entitas yang sudah kita buat sebelumnya di bagian End Entity Profile pada kolom username (melcior) dan masukkan juga password yang kita buat bersamaan dengan username tersebut pada entry Enrollment code.
+ * Upload file CSR yang sudah kita buat di bagian Request File.
+ * Pada bagian Result Type, pilih **PEM – certificate only**, kemudian tekan OK
+ * pindahkan file hasil yang sudah disign (downloaded) ke folder public dan private yg sudah terlebih dahulu dibuat (yang menggunakan openssl tadi). Sehingga di folder ada 3 file: csr, key dan certificate. Certificate akan bernama `sskemenlu_demoid.pem`    
+
+## Download Certificate Chain
+
+kita harus mengunduh 1 file lagi yaitu CA chain certificate dari CA yang menerbitkan sertifikat ini
+
+Pada laman ejbca [https://ca.imigrasi_demo.id:9443/ejbca/](https://ca.imigrasi_demo.id:9443/ejbca/) kita download CA chain certificate.
+Pada bagian **Retrieve**, Pilih **Fetch CA Certificates**. List CA yang tersedia pun akan muncul pada bagian
+ 
+```
+CA: ManagementCA
+UID=c-0c8oa2agyp0c97v24,CN=ManagementCA,O=EJBCA Container Quickstart
+```
+
+Pilih link **Download PEM Chain**.
+
+Kalau sudah di download, masukkan file chain.pem (*ManagementCA-chain.pem*) tersebut ke dalam direktori sertifikat. Kini di dalam folder tersebut sudah ada 4 file.
+
+ * Certificate : sskemenlu_demoid.pem
+ * Key : privet_kemludemo.key
+ * Certificate Chain : ManagementCA-chain.pem
+ * CSR : csr_kemludemo.csr (sudah tidak diperlukan)
+
+simpan key ke dalam keystore server.jks tapi terleibh dahulu ubah ke pkcs12 (menyimpan key dan certificate - ingat, A certificate contains a public key.)
+
+#### Convert the certificate and private key to PKCS 12:
+
+```
+openssl pkcs12 -export -in sskemenlu_demoid.pem -inkey privet_kemludemo.key -name ss.kemenlu_demo.id -out sskemenludemobundle-PKCS-12.p12
+```
+
+#### Import the certificate to the keystore:
+
+```
+keytool -importkeystore -deststorepass foo123 -destkeystore keystore.jks -srckeystore sskemenludemobundle-PKCS-12.p12 -srcstoretype PKCS12
+```
+
+Check dengan command untuk memastikan validitas keystore:
+
+`keytool -list -v -keystore keystore.jks`
+
+# Signserver Instalasi menggunakan docker
 
 ## get docker image
 
 `docker pull primekey/signserver-ce:5.2.0`
 
+
+## docker compose
+
+
+```
+version: '3'
+
+services:
+  signserver-service:
+    container_name: signserver_kemenlu_demo
+    image: primekey/signserver-ce:5.2.0
+    ports:
+      - 8443:8443
+      - 443:8443
+      - 8080:8080
+    hostname: ss.kemenlu_demo.id
+    volumes:
+      - ./certa/keystore.jks:/mnt/persistent/secrets/tls/ss.kemenlu_demo.id/server.jks:ro
+      - ./certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.kemenlu_demo.id/server.storepasswd:ro
+      - ./certa_pem/certificate.pem:/mnt/external/secrets/tls/cas/ManagementCA1.crt:ro                 
+
+```
+
+## run
+
+`docker-compose --project-name signserver_kemenlu_demo -f ./docker-compose.yml up`
+
+
+akses via [http://ss.kemenlu_demo.id:8080/signserver](http://ss.kemenlu_demo.id:8080/signserver)
+
+## Add Crypto token worker
+
+ * Pada laman SignServer Administration Web tambahkan worker **keystore-crypto.properties** via pilihan Load dari template
+ * Update the following in the configuration:
+    * Change **WORKERGENID1.KEYSTORETYPE=PKCS12** to **WORKERGENID1.KEYSTORETYPE=INTERNAL**
+    * Remove or comment the line starting with **WORKERGENID1.KEYSTOREPATH**
+    * tambahkan baris **WORKERGENID1.KEYSTOREPASSWORD=[isi dengan password]**
+    * Apply untuk menambakan Crypto token
+ * Aktifasi Crypto token yang telah dibuat. 
+ * Masukkan passwrd yg didefinisikan dari **WORKERGENID1.KEYSTOREPASSWORD**. Pada tahap ini crypto worker tetap offline karena key belum digenerate
+ * setelahnya masuk ke entry crypto token tersebut dan pilih tab **Crypto Token** untuk generate key
+ * click **Generate key**.
+ * specify a New Key Alias name for the key, for example "mrtdsod_test"
+ * verify that the worker is now in state **ACTIVE**.
+
+## Add mrtdsod Signer
+
+ * On the SignServer Workers page, click **Add**.
+ * Click From Template.
+ * Select the properties in the Load From Template list for the signer to add, for example **mrtdsodsigner.properties** and click Next.
+ * edit WORKERGENID1.NAME beri nama yang unik misal 'MRTDSODSigner'.
+ * edit WORKERGENID1.CRYPTOTOKEN set nama Crypto Token yang tadi dibuat
+ * uncomment baris **WORKERGENID1.DEFAULTKEY=signer00003**
+ * Click Apply to load the configuration. The worker is OFFLINE as it needs a key and certificate.
+ 
+### Generate Keys and Request and Install Certificates
+
+#### generate Key
+
+ * Select the signer in the Workers list, and click **Renew key**.
+ * Under Renew Keys, specify the following:
+    * Select Key Algorithm, for example RSA.
+    * Select Key Specification, for example 3072.
+    * Specify a name for the new key, for example 'mrtdsodsignerkey001'.
+    * Click Generate. 
+    
+#### generate the CSR for the signer
+
+ * Select the signer in the Workers list, and click Generate CSR.
+ * Specify a DN, for example "CN=MrtdsodSigner 0001", and then click **Generate**.
+ * Click **Download** and store the CSR/PKCS#10 file (extension is .p10 file - X905).
+
+#### Bring the CSR to the CA and obtain a certificate in PEM format for it.
+
+ * go to ca_server (using ejbca in this case)
+ * pada halaman utama dari EJBCA pilih **Create Certificate from CSR** pada bagian enroll.
+ * Di bagian Enroll, masukkan username dari entitas yang sudah kita buat sebelumnya di bagian End Entity Profile pada kolom username dan masukkan juga password yang kita buat bersamaan dengan username tersebut pada entry Enrollment code.
+ * Upload file CSR yang sudah kita buat di bagian Request File.
+ * Pada bagian **Result Type**, pilih **PEM – full certificate chain**, lalu download pem file
+
+#### install the signer certificates issued by the CA in SignServer
+
+ * Select the signer in the SignServer Workers list, and click **Install Certificates**.
+ * Browse for the PEM certificate file and click **Add**.
+ * Click **Install** and confirm that the signer is now listed as ACTIVE and ready to be used.
+   
