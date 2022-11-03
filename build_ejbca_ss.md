@@ -197,4 +197,41 @@ akses via [http://ss.kemenlu_demo.id:8080/signserver](http://ss.kemenlu_demo.id:
  * Select the signer in the SignServer Workers list, and click **Install Certificates**.
  * Browse for the PEM certificate file and click **Add**.
  * Click **Install** and confirm that the signer is now listed as ACTIVE and ready to be used.
+
+
+## Add pdf Signer   
+
+ * On the SignServer Workers page, click **Add**.
+ * Click From Template.
+ * Select the properties in the Load From Template list for the signer to add, for example **pdfsigner.properties** and click **Next**.
+ * edit WORKERGENID1.NAME beri nama yang unik misal 'PDFSigner'. 
+ * edit WORKERGENID1.CRYPTOTOKEN set nama Crypto Token yang tadi dibuat
+ * uncomment baris WORKERGENID1.DEFAULTKEY=signer00003
+Click Apply to load the configuration. The worker is OFFLINE as it needs a key and certificate.
+
+## Generate Keys and Request and Install Certificates
+
+### generate Key
+
+* Select the signer in the Workers list, and click **Renew key**.
+ * Under Renew Keys, specify the following:
+    * Select Key Algorithm, for example RSA.
+    * Select Key Specification, for example 3072.
+    * Specify a name for the new key, for example 'pdfsignerkey001'.
+    * Click Generate.
+
+### generate the CSR for the signer
+
+ * Select the signer in the Workers list, and click Generate CSR.
+ * Specify a DN, for example "CN=PdfSigner 0001", and then click **Generate**.
+ * Click Download and store the CSR/PKCS#10 file (extension is .p10 file - X905). 
+ 
+### Bring the CSR to the CA and obtain a certificate in PEM format for it.
+
+exact step same as above on part with the same name
+
+### install the signer certificates issued by the CA in SignServer
+
+exact step same as above on part with the same name
+
    
