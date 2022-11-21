@@ -70,6 +70,18 @@ mount di path : `/mnt/external/secrets/tls/cas/*.crt`
 
 truststore dan keystore akan digenerate ada di path `/opt/primekey/wildfly-22.0.1.Final/standalone/configuration`
 
+atau jika key dan certificates dimounting di path `/mnt` seperti contoh:
+
+```
+      - ./certa/keystore.jks:/mnt/persistent/secrets/tls/ss.kemenlu_demo.id/server.jks:ro
+      - ./certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.kemenlu_demo.id/server.storepasswd:ro
+      - ./certa_pem/certificate.pem:/mnt/external/secrets/tls/cas/ManagementCA1.crt:ro
+      
+```
+
+ maka pathnya menjadi
+
+`/opt/primekey/appserver/standalone/configuration`
 check menggunakan 
 
 `keytool -list -v -keystore <file>`
