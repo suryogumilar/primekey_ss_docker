@@ -42,3 +42,21 @@ try login to the web admin or webclient again
 ### reload all workers
 
 ```reloadallworker```
+
+### found problem with restricted algorithm for certificate
+
+example:   
+```
+The input uses a 2048-bit DSA key which is considered a security risk and is disabled
+```
+edit entry in file `/usr/share/crypto-policies/DEFAULT/java.txt` or `/etc/crypto-policies/back-ends/java.config`
+
+edit entry:   
+```
+jdk.certpath.disabledAlgorithms=MD2, MD5, DSA, RSA keySize < 2048
+```
+
+remove in this case DSA entry if you want to accept 2048-bit DSA key
+
+
+https://stackoverflow.com/questions/54634060/java-algorithm-constraints-check-failed-on-key-rsa-with-size-of-1024bits
