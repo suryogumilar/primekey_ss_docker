@@ -219,6 +219,25 @@ Then, to install the signer certificates issued by the CA in SignServer, do the 
 
 #### Autentikasi WS Client Signer 
 
+##### Client WS WSDL url
+
+akses wsdl url : [https://host:port/signserver/ClientWSService/ClientWS?wsdl](https://host:port/signserver/ClientWSService/ClientWS?wsdl)
+
+example: 
+
+https://ss.gehirn.org:8443/signserver/ClientWSService/ClientWS?wsdl
+
+##### Admin WS WSDL url
+
+
+akses wsdl for admin WS 
+
+[http://hostname:port/signserver/AdminWSService/AdminWS?wsdl](http://hostname:port/signserver/AdminWSService/AdminWS?wsdl)
+
+example: 
+
+https://ss.gehirn.org:8443/signserver/AdminWSService/AdminWS?wsdl
+
 ##### buat certificate untuk WS API client 
 
 Caranya sama dengan generate certificate lainnya dan pastikan CN nya sama dengan host signserver (misal ss.gehirn.org):
@@ -260,6 +279,22 @@ Dengan tambahan command untuk export cert based X905 yang akan di load pada konf
 jvm : 
 ` -Djavax.net.ssl.trustStore=C:\certa\cacerts_4_java_apps.jks -Djavax.net.ssl.trustStorePassword=passw0rd_cacert`   
 `-Djavax.net.ssl.keyStorePassword=passw0rd -Djavax.net.ssl.keyStore=C:\tuk_ws\mrtdauth_keystore.jks`
+
+
+### java apps accessing Signserver Web service interface
+
+both keystore and trustore option must exist 
+
+keystore contains private key of apps and its public key must be put inside signserver truststore file, while truststore must contain public key of signserver
+
+#### environment to set
+
+```
+-Djavax.net.ssl.trustStore=/trustore_location/trust_store.jks 
+-Djavax.net.ssl.trustStorePassword=password 
+-Djavax.net.ssl.keyStorePassword=password 
+-Djavax.net.ssl.keyStore=/keystore_location/keystore_for_access_signserver.jks
+```
 
 ## referensi
 

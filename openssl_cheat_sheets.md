@@ -40,7 +40,13 @@ keytool -importkeystore -srckeystore keystore.jks \
 ```
 keytool -exportcert -alias first-key-pair -keystore keystore.jks -rfc -file first-key-pair-cert.pem
 ```
+## creating keystore and import .crt
 
+`keytool -import -alias testalias -file test.crt -keypass keypass -keystore test.jks -storepass test@123`
+
+## importing .crt into java keystore
+
+`keytool -trustcacerts -keystore "/jdk/jre/lib/security/cacerts" -storepass changeit -importcert -alias testalias -file "/opt/ssl/test.crt"`
 
 ## Viewing Certificate Information
 

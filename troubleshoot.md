@@ -45,6 +45,8 @@ try login to the web admin or webclient again
 
 ### found problem with restricted algorithm for certificate
 
+Or if java client apps accessing signserver webservice got error like *"javax.net.ssl.SSLHandshakeException: No supported signature algorithm"*
+
 example:   
 ```
 The input uses a 2048-bit DSA key which is considered a security risk and is disabled
