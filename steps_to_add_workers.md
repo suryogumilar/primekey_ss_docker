@@ -1,5 +1,21 @@
 # Add workers
 
+## Crypto worker (internal)
+
+1. Pada laman SignServer Administration Web tambahkan worker. Load dari template dengan opsi `keystore-crypto.properties`
+2. Update the following in the configuration:
+   * Change "WORKERGENID1.KEYSTORETYPE=PKCS12" to "WORKERGENID1.KEYSTORETYPE=INTERNAL". (Opsi INTERNAL = to use an in-configuration keystore in other words INTERNAL to use a keystore stored in the database (tied to the crypto worker))
+   * Remove the line starting with "WORKERGENID1.KEYSTOREPATH".
+3. set WORKERGENID1.KEYSTOREPASSWORD=[isi dengan password] cara ini membuat token "auto-activated"
+4. Apply untuk menambakan Crypto token
+5. Aktifasi Crypto token yang telah dibuat (atau bisa dilakukan setelah gen key. Jika tanpa melakukan aktifasi, maka langsung jalankan ke point 7)
+6. Masukkan passwrd baru, jangan sampai lupa karena dibutuhkan saat aktifasi ulang saat signserver direstart atau tetapkan pada property WORKERGENID1.KEYSTOREPASSWORD=[isi dengan password] cara ini membuat token "auto-activated"
+7. setelahnya masuk ke entry crypto token tersebut dan pilih tab **'Crypto Token'** untuk generate key
+8. click Generate key.
+9. specify a New Key Alias name for the key, for example "mrtdsod_test"
+10. Click Generate dan Aktifasi Crypto token yang telah dibuat (jika point 5 terlewati) namun biasanya jika sudah genkey maka token crypto akan langsung teraktifasi.
+11. and verify that the worker is now in state **ACTIVE**.
+
 
 ## PDF signer worker
 
