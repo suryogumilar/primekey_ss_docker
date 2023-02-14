@@ -33,8 +33,8 @@ Akses [https://ca.imigrasi_demo.id:9443/ejbca/adminweb/](https://ca.imigrasi_dem
  * go to **RA Functions** dan ke **End Entity Profiles** untuk mengkonfigurasi RA. [Link](https://ca.imigrasi_demo.id:9443/ejbca/adminweb/ra/editendentityprofiles/editendentityprofiles.xhtml)
     * tambahkan entry *CSR Imigrasi Profile* (type it and then klik **add Profile**) lalu pilih entry *CSR Imigrasi Profile* yang sudah ditambahkan tersebut dan edit dengan klik **Edit end entity profile**:
        * Opsi **Use** pada bagian **End Entity E-mail** di-untick 
-       * untick opsi **modifiable** pada saat isi text field **CN, Common name**. CN diisi *ss.kemenlu_demo.id* sesuai hostname Server yang ingin kita pasangkan Sertifikat SSL. Jadi setiap *end entity profiles* dipetakan ke satu hostname server. Oleh sebab itu setiap request defaultnya hanya 1 kali ). Bagian ini juga kita membuat FQDN server yang akan dipasangkan sertifikat dengan *Add* atau *Select for removal*
-          * setidaknya tambahkan O=Kemenlu dan OU=epassport
+       * untick opsi **modifiable** pada saat isi text field **CN, Common name**. CN diisi *ss.kxxx_demo.id* sesuai hostname Server yang ingin kita pasangkan Sertifikat SSL. Jadi setiap *end entity profiles* dipetakan ke satu hostname server. Oleh sebab itu setiap request defaultnya hanya 1 kali ). Bagian ini juga kita membuat FQDN server yang akan dipasangkan sertifikat dengan *Add* atau *Select for removal*
+          * setidaknya tambahkan O=Kexxx dan OU=epxxxrt
        * Pada bagian **Main Certificate Data** set **Default Certificate Profile** ke *CSR Imigrasi Server* dan pada **Available Certificate Profiles** dipilih *CSR Imigrasi Server* saja
        * **Default CA** pada bagian **Main Certificate Data** diisi *ManagementCA* begitu juga dengan entry **Available CAs**
        * **Default Token** pada bagian **Main Certificate Data** diisi *User Generated*
@@ -46,7 +46,7 @@ Akses [https://ca.imigrasi_demo.id:9443/ejbca/adminweb/](https://ca.imigrasi_dem
     * Pada bagian **End Entity Profile** pada laman tsb, Pilih *CSR Imigrasi Profile*.    
     * Masukkan Username dan Password sesuai dengan yang kita inginkan (dalam hal ini usernamenya kita tentukan *melcior* - bisa apa saja)
     * Masukkan alamat email jika kita pilih **Use** pada entry **End Entity E-mail** pada langkah sebelumnya.
-    * Pada contoh kali ini, untuk Subject DN Attributes, Saya hanya menggunakan CN (Common Name). Isi sesuai dengan FQDN Server yang ingin kita pasangkan Sertifikat SSL (dalam hal ini adalah *ss.kemenlu_demo.id*).
+    * Pada contoh kali ini, untuk Subject DN Attributes, Saya hanya menggunakan CN (Common Name). Isi sesuai dengan FQDN Server yang ingin kita pasangkan Sertifikat SSL (dalam hal ini adalah *ss.kexxx_demo.id*).
     * Kalau sudah selesai, tekan tombol **Add**
     
         
@@ -65,7 +65,7 @@ pada CA Server (ejbca) kita upload CSR yang sudah dibuat tadi untuk generate ser
  * Di bagian Enroll, masukkan username dari entitas yang sudah kita buat sebelumnya di bagian End Entity Profile pada kolom username (melcior) dan masukkan juga password yang kita buat bersamaan dengan username tersebut pada entry Enrollment code.
  * Upload file CSR yang sudah kita buat di bagian Request File.
  * Pada bagian Result Type, pilih **PEM – certificate only**, kemudian tekan OK
- * pindahkan file hasil yang sudah disign (downloaded) ke folder public dan private yg sudah terlebih dahulu dibuat (yang menggunakan openssl tadi). Sehingga di folder ada 3 file: csr, key dan certificate. Certificate akan bernama `sskemenlu_demoid.pem`    
+ * pindahkan file hasil yang sudah disign (downloaded) ke folder public dan private yg sudah terlebih dahulu dibuat (yang menggunakan openssl tadi). Sehingga di folder ada 3 file: csr, key dan certificate. Certificate akan bernama `sskexxx_demoid.pem`    
 
 ## Download Certificate Chain
 
@@ -83,7 +83,7 @@ Pilih link **Download PEM Chain**.
 
 Kalau sudah di download, masukkan file chain.pem (*ManagementCA-chain.pem*) tersebut ke dalam direktori sertifikat. Kini di dalam folder tersebut sudah ada 4 file.
 
- * Certificate : sskemenlu_demoid.pem
+ * Certificate : sskexxx_demoid.pem
  * Key : privet_kemludemo.key
  * Certificate Chain : ManagementCA-chain.pem
  * CSR : csr_kemludemo.csr (sudah tidak diperlukan)
@@ -93,13 +93,13 @@ simpan key ke dalam keystore server.jks tapi terleibh dahulu ubah ke pkcs12 (men
 #### Convert the certificate and private key to PKCS 12:
 
 ```
-openssl pkcs12 -export -in sskemenlu_demoid.pem -inkey privet_kemludemo.key -name ss.kemenlu_demo.id -out sskemenludemobundle-PKCS-12.p12
+openssl pkcs12 -export -in sskexxx_demoid.pem -inkey privet_kemludemo.key -name ss.kexxx_demo.id -out sskexxxdemobundle-PKCS-12.p12
 ```
 
 #### Import the certificate to the keystore:
 
 ```
-keytool -importkeystore -deststorepass foo123 -destkeystore keystore.jks -srckeystore sskemenludemobundle-PKCS-12.p12 -srcstoretype PKCS12
+keytool -importkeystore -deststorepass foo123 -destkeystore keystore.jks -srckeystore sskexxxdemobundle-PKCS-12.p12 -srcstoretype PKCS12
 ```
 
 Check dengan command untuk memastikan validitas keystore:
@@ -121,26 +121,26 @@ version: '3'
 
 services:
   signserver-service:
-    container_name: signserver_kemenlu_demo
+    container_name: signserver_kexxx_demo
     image: primekey/signserver-ce:5.2.0
     ports:
       - 8443:8443
       - 443:8443
       - 8080:8080
-    hostname: ss.kemenlu_demo.id
+    hostname: ss.kexxx_demo.id
     volumes:
-      - ./certa/keystore.jks:/mnt/persistent/secrets/tls/ss.kemenlu_demo.id/server.jks:ro
-      - ./certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.kemenlu_demo.id/server.storepasswd:ro
+      - ./certa/keystore.jks:/mnt/persistent/secrets/tls/ss.kexxx_demo.id/server.jks:ro
+      - ./certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.kexxx_demo.id/server.storepasswd:ro
       - ./certa_pem/certificate.pem:/mnt/external/secrets/tls/cas/ManagementCA1.crt:ro                 
 
 ```
 
 ## run
 
-`docker-compose --project-name signserver_kemenlu_demo -f ./docker-compose.yml up`
+`docker-compose --project-name signserver_kexxx_demo -f ./docker-compose.yml up`
 
 
-akses via [http://ss.kemenlu_demo.id:8080/signserver](http://ss.kemenlu_demo.id:8080/signserver)
+akses via [http://ss.kexxx_demo.id:8080/signserver](http://ss.kexxx_demo.id:8080/signserver)
 
 ## Add Crypto token worker
 

@@ -13,7 +13,7 @@ services:
       - ./mariadb_dir:/var/lib/mysql
 
   signserver-service:
-    container_name: signserver_kemenlu_demo_mariadb
+    container_name: signserver_kexxx_demo_mariadb
     image: primekey/signserver-ce:5.2.0
     ports:
       - 8443:8443
@@ -23,10 +23,10 @@ services:
       - DATABASE_JDBC_URL=jdbc:mysql://db_of_maria:3306/signserverdb?characterEncoding=UTF-8
     env_file:
       - ./mariadb.env
-    hostname: ss.kemenlu_demo.id
+    hostname: ss.kexxx_demo.id
     volumes:
-      - ./certa/keystore.jks:/mnt/persistent/secrets/tls/ss.kemenlu_demo.id/server.jks:ro
-      - ./certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.kemenlu_demo.id/server.storepasswd:ro
+      - ./certa/keystore.jks:/mnt/persistent/secrets/tls/ss.kexxx_demo.id/server.jks:ro
+      - ./certa/keystore.storepasswd:/mnt/persistent/secrets/tls/ss.kexxx_demo.id/server.storepasswd:ro
       - ./certa_pem/certificate.pem:/mnt/external/secrets/tls/cas/ManagementCA1.crt:ro
     depends_on: 
       - mariadb_ss
