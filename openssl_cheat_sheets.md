@@ -61,3 +61,21 @@ keytool -exportcert -alias first-key-pair -keystore keystore.jks -rfc -file firs
 ## viewing key.pem (private key)
 
 `openssl rsa -in key.pem -check`
+
+## create empty keystore
+
+Using keytool, create a random key pair:
+
+`keytool -genkeypair -alias boguscert -storepass foo123 -keypass foo123 -keystore pkcs12_api_test.p12 -dname "CN=Developer, OU=Department, O=Company, L=City, ST=State, C=CA"`
+
+migrate to PKCS12:
+
+`keytool -importkeystore -srckeystore pkcs12_api_test.p12 -destkeystore pkcs12_api_test.p12 -deststoretype pkcs12`
+
+then delete it:
+
+`keytool -delete -alias boguscert -storepass foo123 -keystore pkcs12_api_test.p12`
+
+check:
+
+`keytool -list -keystore pkcs12_api_test.p12 -storepass foo123`
