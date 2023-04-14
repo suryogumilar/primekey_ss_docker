@@ -136,6 +136,8 @@ Certificate:
 
 **ERR_CERT_COMMON_NAME_INVALID**: means browser failed to verify website SSL Certificate. Usually happens when common name is not equal to the website's domain name.
 
+**ERR_CERT_AUTHORITY_INVALID**: means browser cannot verify this certificate because it is not in the Trusted Root Certification Authorities store of the browser or OS or using self signed certificate.
+
 ### reference
 
  - https://www.javatpoint.com/rsa-encryption-algorithm
